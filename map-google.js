@@ -1,28 +1,29 @@
-import xin from 'xin';
+import { define, Component } from '@xinix/xin';
+
+import './css/xin-map.css';
 
 let mapInquiries = [];
 
-class MapGoogle extends xin.Component {
-  static async waitForGoogleMap (apiKey) {
+export class MapGoogle extends Component {
+  static waitForGoogleMap (apiKey) {
     if (window.google && window.google.maps) {
       return window.google.maps;
     }
 
-    if (mapInquiries.length > 0) {
-      return await new Promise((resolve, reject) => {
-        mapInquiries.push([resolve, reject]);
-      });
-    }
-
-    return await new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       mapInquiries.push([resolve, reject]);
+
+      if (mapInquiries.length > 1) {
+        return;
+      }
 
       let script = document.createElement('script');
       script.id = 'gmap-api';
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.onload = () => {
+      script.onload = function () {
         mapInquiries.forEach(inquiry => inquiry[0](window.google.maps));
       };
+
       document.body.appendChild(script);
     });
   }
@@ -109,15 +110,23 @@ class MapGoogle extends xin.Component {
     this.markers = [];
   }
 
+  attached () {
+    super.attached();
+
+    if (!this.apiKey) {
+      throw new Error('Please define api key');
+    }
+  }
+
   _clearListener (name) {
     if (this._listeners[name]) {
-      window.google.maps.event.removeListener(this._listeners[name]);
+      this.googleMaps.event.removeListener(this._listeners[name]);
       this._listeners[name] = null;
     }
   }
 
   _forwardEvent (name) {
-    this._listeners[name] = window.google.maps.event.addListener(this.map, name, evt => {
+    this._listeners[name] = this.googleMaps.event.addListener(this.map, name, evt => {
       this.fire('google-map-' + name, evt);
     });
   }
@@ -127,81 +136,24 @@ class MapGoogle extends xin.Component {
       return;
     }
 
-    await MapGoogle.waitForGoogleMap(this.apiKey);
+    this.googleMaps = await MapGoogle.waitForGoogleMap(this.apiKey);
 
-    this.set('map', new window.google.maps.Map(this.$.map, this._getMapOptions()));
+    this.set('map', new this.googleMaps.Map(this.$.map, this._getMapOptions()));
 
-    this.async(() => {
-      google.maps.event.trigger(this.map, 'resize');
-    }, 50);
+    this.async(() => this.googleMaps.event.trigger(this.map, 'resize'), 50);
 
     this.fire('google-map-ready');
 
     if (this.markCenter) {
-      let centerMarker = document.createElement('div');
-      centerMarker.classList.add('centerMarker');
-      this.map.getDiv().appendChild(centerMarker);
+      this._renderCenterMarker();
     }
 
     if (this.currentLocation) {
-      let controlDiv = document.createElement('div');
-
-      let firstChild = document.createElement('button');
-      firstChild.style.backgroundColor = '#fff';
-      firstChild.style.border = 'none';
-      firstChild.style.outline = 'none';
-      firstChild.style.width = '28px';
-      firstChild.style.height = '28px';
-      firstChild.style.borderRadius = '2px';
-      firstChild.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
-      firstChild.style.cursor = 'pointer';
-      firstChild.style.marginRight = '10px';
-      firstChild.style.padding = '0px';
-      firstChild.title = 'Your Location';
-      controlDiv.appendChild(firstChild);
-
-      let secondChild = document.createElement('div');
-      secondChild.style.margin = '5px';
-      secondChild.style.width = '18px';
-      secondChild.style.height = '18px';
-      secondChild.style.backgroundImage = 'url(https://maps.gstatic.com/tactile/mylocation/mylocation-sprite-1x.png)';
-      secondChild.style.backgroundSize = '180px 18px';
-      secondChild.style.backgroundPosition = '0px 0px';
-      secondChild.style.backgroundRepeat = 'no-repeat';
-      secondChild.id = 'you_location_img';
-      firstChild.appendChild(secondChild);
-
-      let currentLocationImg = secondChild;
-
-      window.google.maps.event.addListener(this.map, 'dragend', () => {
-        currentLocationImg.style.backgroundPosition = '0px 0px';
-      });
-
-      firstChild.addEventListener('click', () => {
-        var imgX = '0';
-        var animationInterval = setInterval(() => {
-          imgX = imgX === '-18' ? '0' : '-18';
-          currentLocationImg.style.backgroundPosition = imgX + 'px 0px';
-        }, 500);
-
-        navigator.geolocation.getCurrentPosition(position => {
-          var latlng = new window.google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-          // marker.setPosition(latlng);
-          this.map.setCenter(latlng);
-          clearInterval(animationInterval);
-          currentLocationImg.style.backgroundPosition = '-144px 0px';
-        }, err => {
-          clearInterval(animationInterval);
-          currentLocationImg.style.backgroundPosition = '0px 0px';
-        });
-      });
-
-      controlDiv.index = 1;
-      this.map.controls[window.google.maps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
+      this._renderCurrentLocation();
     }
 
     if (this.__isNotified('latitude') && this.__isNotified('longitude')) {
-      window.google.maps.event.addListener(this.map, 'center_changed', () => {
+      this.googleMaps.event.addListener(this.map, 'center_changed', () => {
         let center = this.map.getCenter();
         this.set('latitude', center.lat());
         this.set('longitude', center.lng());
@@ -210,6 +162,16 @@ class MapGoogle extends xin.Component {
       });
     }
 
+    this._renderMarkers();
+  }
+
+  _renderCenterMarker () {
+    let centerMarker = document.createElement('div');
+    centerMarker.classList.add('xin-map__center-marker');
+    this.map.getDiv().appendChild(centerMarker);
+  }
+
+  _renderMarkers () {
     [].forEach.call(this.children, el => {
       if (el.is === 'map-google-marker') {
         if (!el.get('map')) {
@@ -219,6 +181,62 @@ class MapGoogle extends xin.Component {
     });
   }
 
+  _renderCurrentLocation () {
+    let controlDiv = document.createElement('div');
+
+    let firstChild = document.createElement('button');
+    firstChild.style.backgroundColor = '#fff';
+    firstChild.style.border = 'none';
+    firstChild.style.outline = 'none';
+    firstChild.style.width = '28px';
+    firstChild.style.height = '28px';
+    firstChild.style.borderRadius = '2px';
+    firstChild.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
+    firstChild.style.cursor = 'pointer';
+    firstChild.style.marginRight = '10px';
+    firstChild.style.padding = '0px';
+    firstChild.title = 'Your Location';
+    controlDiv.appendChild(firstChild);
+
+    let secondChild = document.createElement('div');
+    secondChild.style.margin = '5px';
+    secondChild.style.width = '18px';
+    secondChild.style.height = '18px';
+    secondChild.style.backgroundImage = 'url(https://maps.gstatic.com/tactile/mylocation/mylocation-sprite-1x.png)';
+    secondChild.style.backgroundSize = '180px 18px';
+    secondChild.style.backgroundPosition = '0px 0px';
+    secondChild.style.backgroundRepeat = 'no-repeat';
+    secondChild.id = 'you_location_img';
+    firstChild.appendChild(secondChild);
+
+    let currentLocationImg = secondChild;
+
+    this.googleMaps.event.addListener(this.map, 'dragend', () => {
+      currentLocationImg.style.backgroundPosition = '0px 0px';
+    });
+
+    firstChild.addEventListener('click', () => {
+      let imgX = '0';
+      let animationInterval = setInterval(() => {
+        imgX = imgX === '-18' ? '0' : '-18';
+        currentLocationImg.style.backgroundPosition = imgX + 'px 0px';
+      }, 500);
+
+      navigator.geolocation.getCurrentPosition(position => {
+        let latlng = new this.googleMaps.LatLng(position.coords.latitude, position.coords.longitude);
+        // marker.setPosition(latlng);
+        this.map.setCenter(latlng);
+        clearInterval(animationInterval);
+        currentLocationImg.style.backgroundPosition = '-144px 0px';
+      }, () => {
+        clearInterval(animationInterval);
+        currentLocationImg.style.backgroundPosition = '0px 0px';
+      });
+    });
+
+    controlDiv.index = 1;
+    this.map.controls[this.googleMaps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
+  }
   _dragEventsChanged () {
     if (this.map) {
       if (this.dragEvents) {
@@ -267,7 +285,7 @@ class MapGoogle extends xin.Component {
       minZoom: Number(this.minZoom),
       zoomControl: true,
       zoomControlOptions: {
-          position: google.maps.ControlPosition.LEFT_BOTTOM
+        position: this.googleMaps.ControlPosition.LEFT_BOTTOM,
       },
     };
 
@@ -291,13 +309,17 @@ class MapGoogle extends xin.Component {
 
     this.debounce('_centerChanged', () => {
       this.map.setCenter({
-        lat: this.latitude,
-        lng: this.longitude,
+        lat: Number(this.latitude),
+        lng: Number(this.longitude),
       });
     });
   }
+
+  resize () {
+    if (this.googleMaps) {
+      this.googleMaps.event.trigger(this.map, 'resize');
+    }
+  }
 }
 
-xin.define('map-google', MapGoogle);
-
-export default MapGoogle;
+define('map-google', MapGoogle);

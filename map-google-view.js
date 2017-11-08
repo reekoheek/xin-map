@@ -1,21 +1,13 @@
-import xin from 'xin';
-import View from 'xin/components/view';
+import { define } from '@xinix/xin';
+import { View } from '@xinix/xin/components/view';
+
 import html from './templates/map-google-view.html';
-
-import './css/map-google-view.css';
-
-import 'xin-ionic/ion-toolbar';
-import 'xin-ionic/ion-label';
-import 'xin-ionic/ion-button';
-import 'xin-ionic/ion-input';
-import 'xin-ionic/ion-searchbar';
-import 'xin-ionic/ion-icon';
-import 'xin-ionic/ion-content';
 
 import './map-google';
 import './map-google-marker';
+import './css/map-google-view.css';
 
-class MapGoogleView extends View {
+export class MapGoogleView extends View {
   get template () {
     return html;
   }
@@ -46,15 +38,26 @@ class MapGoogleView extends View {
         value: () => ({}),
       },
 
+      search: {
+        type: String,
+        value: '',
+      },
+
       callback: {
         type: Function,
         value: () => {
           return result => {
-            console.log('do nothing');
+            console.info('Choose callback do nothing');
           };
         },
       },
     });
+  }
+
+  ready () {
+    super.ready();
+
+    this.classList.add('map-google-view');
   }
 
   focusing (parameters) {
@@ -73,6 +76,11 @@ class MapGoogleView extends View {
         this.set('longitude', position.coords.longitude);
       });
     }
+  }
+
+  focused () {
+    super.focused();
+    this.$.map.resize();
   }
 
   _chooseClicked (evt) {
@@ -134,6 +142,4 @@ class MapGoogleView extends View {
   }
 }
 
-xin.define('map-google-view', MapGoogleView);
-
-export default MapGoogleView;
+define('map-google-view', MapGoogleView);

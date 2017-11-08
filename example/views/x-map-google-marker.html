@@ -1,0 +1,35 @@
+<style scoped>
+  x-map-google-marker .map {
+    height: 200px;
+    border: 1px solid #666;
+    margin-bottom: 20px;
+  }
+
+  x-map-google-marker label {
+    display: block;
+  }
+
+  x-map-google-marker input {
+    margin-bottom: 20px;
+  }
+</style>
+
+<div class="padding">
+  <div class="map">
+    <map-google api-key="[[apiKey]]" latitude="{{latitude}}" longitude="{{longitude}}" mark-center>
+      <map-google-marker latitude="-6.2546375" longitude="106.8269952"></map-google-marker>
+      <map-google-marker latitude="-6.253548" longitude="106.827686"></map-google-marker>
+
+    </map-google>
+  </div>
+
+  <div>
+    <label>Latitude</label>
+    <input type="text" value="{{latitude}}">
+  </div>
+
+  <div>
+    <label>Longitude</label>
+    <input type="text" value="{{longitude}}">
+  </div>
+</div>

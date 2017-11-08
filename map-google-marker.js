@@ -1,6 +1,6 @@
-import xin from 'xin';
+import { define, Component } from '@xinix/xin';
 
-class MapGoogleMarker extends xin.Component {
+export class MapGoogleMarker extends Component {
   get props () {
     return Object.assign({}, super.props, {
       latitude: {
@@ -64,12 +64,6 @@ class MapGoogleMarker extends xin.Component {
     this._mouseEventsChanged();
   }
 
-  __templateUninitialize () {
-    super.__templateUninitialize();
-
-    console.log('uninit');
-  }
-
   _clearListener (name) {
     if (this._listeners[name]) {
       this.marker.removeListener(this._listeners[name]);
@@ -124,6 +118,4 @@ class MapGoogleMarker extends xin.Component {
   }
 }
 
-xin.define('map-google-marker', MapGoogleMarker);
-
-export default MapGoogleMarker;
+define('map-google-marker', MapGoogleMarker);

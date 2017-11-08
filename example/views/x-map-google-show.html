@@ -1,0 +1,31 @@
+<style scoped>
+  x-map-google-show .map {
+    height: 200px;
+    border: 1px solid #666;
+    margin-bottom: 20px;
+  }
+
+  x-map-google-show label {
+    display: block;
+  }
+
+  x-map-google-show input {
+    margin-bottom: 20px;
+  }
+</style>
+
+<div class="padding">
+  <div class="map">
+    <map-google api-key="[[apiKey]]" latitude="{{latitude}}" longitude="{{longitude}}" mark-center></map-google>
+  </div>
+
+  <div>
+    <label>Latitude</label>
+    <input type="text" value="{{latitude}}">
+  </div>
+
+  <div>
+    <label>Longitude</label>
+    <input type="text" value="{{longitude}}">
+  </div>
+</div>

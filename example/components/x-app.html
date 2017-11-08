@@ -1,0 +1,27 @@
+<xin-pager>
+  <xin-view uri="/">
+    <div class="padding" style="height: 100%; box-sizing: border-box">
+      <h1>xin-map</h1>
+
+      <p>Set api key, get from <a href="https://developers.google.com/maps/documentation/javascript/get-api-key">here</a></p>
+
+      <form (submit)="saveApiKey(evt)">
+        <input type="text" value="{{apiKey}}">
+        <input type="submit" value="Save">
+      </form>
+
+      <ul class="list">
+        <li><a href="#!/map-google">map-google</a></li>
+        <li><a href="#!/map-google-marker">map-google-marker</a></li>
+        <li><a href="#!/map-google-view">map-google-view</a></li>
+      </ul>
+    </div>
+  </xin-view>
+
+  <x-map-google-show uri="/map-google" api-key="[[apiKey]]"></x-map-google-show>
+
+  <x-map-google-marker uri="/map-google-marker" api-key="[[apiKey]]"></x-map-google-marker>
+
+  <map-google-view uri="/map-google-view" api-key="[[apiKey]]"></map-google-view>
+
+</xin-pager>

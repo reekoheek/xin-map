@@ -1,17 +1,14 @@
-<ion-header>
-  <ion-toolbar>
-    <button is="ion-button" backbutton slot="left">
-      <ion-icon name="arrow-back-outline" role="img" class="icon-ios ion-ios-arrow-back-outline item-icon" aria-label="arrow-back-outline"></ion-icon>
-    </button>
-    <ion-title slot="title">[[title]]</ion-title>
-  </ion-toolbar>
-  <ion-item>
-    <ion-input id="search" type="search" value="{{search}}"></ion-input>
-    <!-- <ion-searchbar id="search" type="search" placeholder="Search" value="{{search}}"></ion-searchbar> -->
-  </ion-item>
-</ion-header>
+<div class="map-google-view__container">
+  <div class="map-google-view__header">
+    <div class="map-google-view__header__row">
+      <button (click)="__global.history.back()">Back</button>
+      <div class="map-google-view__header__title">[[title]]</div>
+    </div>
+    <div class="map-google-view__header__row">
+      <input id="search" type="search" value="{{search}}"></input>
+    </div>
+  </div>
 
-<ion-content class="layout">
   <map-google
     id="map"
     class="flex"
@@ -29,8 +26,8 @@
     (google-map-ready)="_mapReady(evt)"
     >
   </map-google>
-</ion-content>
 
-<ion-footer>
-  <button is="ion-button" (click)="_chooseClicked(evt)" full large>Choose</button>
-</ion-footer>
+  <div class="map-google-view__footer">
+    <button is="ion-button" (click)="_chooseClicked(evt)" full large>Choose</button>
+  </div>
+</div>
